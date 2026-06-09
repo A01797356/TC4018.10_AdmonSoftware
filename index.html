@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartStudy AI - Sprint 1</title>
+</head>
+<body>
+  <h1>SmartStudy AI</h1>
+  <section>
+    <h2>Registro / Inicio de sesión</h2>
+    <input id="name" placeholder="Nombre">
+    <input id="email" placeholder="Correo">
+    <input id="password" type="password" placeholder="Contraseña">
+    <button onclick="login()">Ingresar</button>
+    <p id="loginMessage"></p>
+  </section>
+  <section>
+    <h2>Perfil académico</h2>
+    <input id="level" placeholder="Nivel académico">
+    <input id="subjects" placeholder="Materias separadas por coma">
+    <textarea id="goals" placeholder="Metas de estudio"></textarea>
+    <button onclick="saveProfile()">Guardar perfil</button>
+    <p id="profileMessage"></p>
+  </section>
+  <section>
+    <h2>Actividades académicas</h2>
+    <input id="activityTitle" placeholder="Título">
+    <input id="activitySubject" placeholder="Materia">
+    <select id="activityType"><option>Tarea</option><option>Examen</option><option>Entrega</option></select>
+    <input id="activityDate" type="date">
+    <select id="priority"><option>Alta</option><option>Media</option><option>Baja</option></select>
+    <button onclick="addActivity()">Agregar actividad</button>
+  </section>
+  <section>
+    <h2>Progreso</h2>
+    <ul id="activityList"></ul>
+    <p id="progress"></p>
+  </section>
+  <script>
+    let activities = [];
+    function login() {
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      if (!name || !email || !password) {
+        document.getElementById("loginMessage").innerText = "Completa todos los campos.";
+        return;
+      }
+      document.getElementById("loginMessage").innerText = "Sesión iniciada correctamente.";
+    }
+    function saveProfile() {
+      const level = document.getElementById("level").value;
+      const subjects = document.getElementById("subjects").value;
+      const goals = document.getElementById("goals").value;
+      if (!level || !subjects || !goals) {
+        document.getElementById("profileMessage").innerText = "Completa el perfil académico.";
+        return;
+      }
+      document.getElementById("profileMessage").innerText = "Perfil guardado.";
+    }
+    function addActivity() {
+      const title = document.getElementById("activityTitle").value;
+      const subject = document.getElementById("activitySubject").value;
+      const type = document.getElementById("activityType").value;
+      const date = document.getElementById("activityDate").value;
+      const priority = document.getElementById("priority").value;
+      if (!title || !subject || !date) { alert("Completa los campos obligatorios."); return; }
+      activities.push({ title, subject, type, date, priority, completed: false });
+      renderActivities();
+    }
+    function toggleActivity(index) { activities[index].completed = !activities[index].completed; renderActivities(); }
+    function renderActivities() {
+      const list = document.getElementById("activityList");
+      list.innerHTML = "";
+      activities.forEach((activity, index) => {
+        const item = document.createElement("li");
+        item.innerHTML = `${activity.title} - ${activity.subject} - ${activity.date} - ${activity.priority}
+          <button onclick="toggleActivity(${index})">${activity.completed ? "Pendiente" : "Completar"}</button>`;
+        list.appendChild(item);
+      });
+      updateProgress();
+    }
+    function updateProgress() {
+      const total = activities.length;
+      const completed = activities.filter(a => a.completed).length;
+      const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+      document.getElementById("progress").innerText = `Actividades: ${total} | Completadas: ${completed} | Avance: ${percent}%`;
+    }
+  </script>
+</body>
+</html>
