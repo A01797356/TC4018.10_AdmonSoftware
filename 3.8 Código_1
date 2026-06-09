@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartStudy AI - Sprint 1</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 20px; background: #f5f7fb; }
+    h1 { text-align: center; }
+    section { background: white; padding: 16px; margin-bottom: 16px; border-radius: 8px; border: 1px solid #ddd; }
+    input, select, textarea, button { display: block; width: 100%; margin: 8px 0; padding: 8px; box-sizing: border-box; }
+    button { cursor: pointer; font-weight: bold; }
+    .activity-card { border: 1px solid #ccc; padding: 10px; margin-top: 8px; border-radius: 6px; background: #fafafa; }
+    .completed { text-decoration: line-through; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>SmartStudy AI</h1>
+  <p>Prototipo funcional Sprint 1: base académica del estudiante.</p>
+
+  <section>
+    <h2>HU-01 Registro e inicio de sesión</h2>
+    <input id="studentName" placeholder="Nombre del estudiante">
+    <input id="studentEmail" type="email" placeholder="Correo institucional">
+    <input id="studentPassword" type="password" placeholder="Contraseña">
+    <button onclick="startSession()">Iniciar sesión</button>
+    <button onclick="closeSession()">Cerrar sesión</button>
+    <p id="sessionMessage"></p>
+  </section>
+
+  <section>
+    <h2>HU-02 Perfil académico</h2>
+    <input id="academicLevel" placeholder="Nivel académico">
+    <input id="academicSubjects" placeholder="Materias, separadas por coma">
+    <textarea id="studyGoals" placeholder="Metas de estudio"></textarea>
+    <button onclick="saveAcademicProfile()">Guardar perfil académico</button>
+    <p id="profileStatus"></p>
+  </section>
+
+  <section>
+    <h2>HU-03 Registro de actividades académicas</h2>
+    <input id="taskTitle" placeholder="Título de la actividad">
+    <input id="taskSubject" placeholder="Materia">
+    <select id="taskType"><option value="Tarea">Tarea</option><option value="Examen">Examen</option><option value="Entrega">Entrega</option></select>
+    <input id="taskDeadline" type="date">
+    <select id="taskPriority"><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></select>
+    <button onclick="addAcademicActivity()">Agregar actividad</button>
+  </section>
+
+  <section>
+    <h2>HU-08 parcial Visualización básica de progreso</h2>
+    <div id="activitiesContainer"></div>
+    <p id="progressSummary"></p>
+  </section>
+
+  <script>
+    let activities = JSON.parse(localStorage.getItem("smartstudy_activities")) || [];
+    function showMessage(elementId, message) { document.getElementById(elementId).innerText = message; }
+    function startSession() {
+      const name = document.getElementById("studentName").value.trim();
+      const email = document.getElementById("studentEmail").value.trim();
+      const password = document.getElementById("studentPassword").value.trim();
+      if (!name || !email || !password) { showMessage("sessionMessage", "Por favor completa nombre, correo y contraseña."); return; }
+      localStorage.setItem("smartstudy_user", JSON.stringify({ name, email }));
+      showMessage("sessionMessage", `Bienvenido(a), ${name}. Sesión iniciada correctamente.`);
+    }
+    function closeSession() { localStorage.removeItem("smartstudy_user"); showMessage("sessionMessage", "Sesión cerrada correctamente."); }
+    function saveAcademicProfile() {
+      const level = document.getElementById("academicLevel").value.trim();
+      const subjects = document.getElementById("academicSubjects").value.trim();
+      const goals = document.getElementById("studyGoals").value.trim();
+      if (!level || !subjects || !goals) { showMessage("profileStatus", "Completa nivel académico, materias y metas de estudio."); return; }
+      const profile = { level, subjects: subjects.split(",").map(subject => subject.trim()), goals };
+      localStorage.setItem("smartstudy_profile", JSON.stringify(profile));
+      showMessage("profileStatus", "Perfil académico guardado correctamente.");
+    }
+    function addAcademicActivity() {
+      const title = document.getElementById("taskTitle").value.trim();
+      const subject = document.getElementById("taskSubject").value.trim();
+      const type = document.getElementById("taskType").value;
+      const deadline = document.getElementById("taskDeadline").value;
+      const priority = document.getElementById("taskPriority").value;
+      if (!title || !subject || !deadline) { alert("Completa título, materia y fecha límite."); return; }
+      activities.push({ id: Date.now(), title, subject, type, deadline, priority, completed: false });
+      saveActivities(); renderActivities(); clearActivityForm();
+    }
+    function clearActivityForm() { document.getElementById("taskTitle").value = ""; document.getElementById("taskSubject").value = ""; document.getElementById("taskDeadline").value = ""; document.getElementById("taskPriority").value = "Media"; }
+    function toggleActivityStatus(activityId) {
+      activities = activities.map(activity => activity.id === activityId ? { ...activity, completed: !activity.completed } : activity);
+      saveActivities(); renderActivities();
+    }
+    function saveActivities() { localStorage.setItem("smartstudy_activities", JSON.stringify(activities)); }
+    function renderActivities() {
+      const container = document.getElementById("activitiesContainer");
+      container.innerHTML = "";
+      if (activities.length === 0) { container.innerHTML = "<p>No hay actividades registradas.</p>"; updateProgressSummary(); return; }
+      activities.forEach(activity => {
+        const card = document.createElement("div");
+        card.className = "activity-card";
+        card.innerHTML = `<p class="${activity.completed ? "completed" : ""}"><strong>${activity.title}</strong><br>Materia: ${activity.subject}<br>Tipo: ${activity.type}<br>Fecha límite: ${activity.deadline}<br>Prioridad: ${activity.priority}<br>Estado: ${activity.completed ? "Completada" : "Pendiente"}</p><button onclick="toggleActivityStatus(${activity.id})">${activity.completed ? "Marcar como pendiente" : "Marcar como completada"}</button>`;
+        container.appendChild(card);
+      });
+      updateProgressSummary();
+    }
+    function updateProgressSummary() {
+      const total = activities.length;
+      const completed = activities.filter(activity => activity.completed).length;
+      const pending = total - completed;
+      const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+      document.getElementById("progressSummary").innerText = `Total: ${total} | Pendientes: ${pending} | Completadas: ${completed} | Avance: ${progress}%`;
+    }
+    renderActivities();
+  </script>
+</body>
+</html>
